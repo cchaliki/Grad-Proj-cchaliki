@@ -1,0 +1,14 @@
+---
+title: "Graduate Project"
+author: "Catherine Chalikian"
+date: "4/21/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+As curious creatures, we often seek to understand how things work. This includes determining causal effects. Statistics has established mathematical methods in this pursuit of identifying cause and effect. However, these methods are only valid when certain assumptions are met. One such assumption is the probabilistic assumption, also called the positivity assumption.
+
+Before we get to the assumption, a little background is necessary. First, we need two groups: one is unexposed to the particular treatment denoted Y(0), and the other is the exposed or treatment group denoted Y(1). Then, the assignment mechanism captures which group each study participant is assigned. Mathematically, the assignment mechanism is defined as P(X|Z, Y(0), Y(1)).
