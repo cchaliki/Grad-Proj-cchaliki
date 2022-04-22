@@ -44,7 +44,6 @@ We have generated a dataset with 50 people where the true causal effect is 3. Th
 
 We randomly populate most of the matrix with 0's and 1's. Then, to be sure we there is at least one observation with a unit assignment probability of 0, a zero vector is added in. There are two individuals who had migraines and could never be assigned to the treatment. 
 
-
 ```{r}
 # generate possible exposure assignments X
 exp_assmt_func = function(nrow,ncol){
@@ -59,6 +58,11 @@ exp_assmt
 # choose X at random
 row_num = sample(1:5,1)
 x = exp_assmt[row_num,]
+```
+
+
+```{r}
+as.data.frame(table(x))
 ```
 
 Now let's say that there are only 5 exposure assignments with assignment mechanisms greater than 0 and that the assignment mechanisms have equal probability 0.2. Then, we can select one at random to be our exposure assignment vector.
