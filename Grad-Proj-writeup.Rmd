@@ -1,7 +1,8 @@
 ---
-title: "Graduate Project"
+title: "Assuming Positivity"
 author: "Catherine Chalikian"
 date: "4/21/2022"
+theme: "flatly"
 output: html_document
 ---
 
@@ -9,15 +10,19 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-As curious creatures, we often seek to understand how things work. This includes determining causal effects. Statistics has established mathematical methods in this pursuit of identifying cause and effect. However, these methods are only valid when certain assumptions are met. One such assumption is the probabilistic assumption, also called the positivity assumption.
+#### As curious creatures, we often seek to understand how things work. This includes determining causal effects. Statistics has established mathematical methods in this pursuit of identifying cause and effect. However, these methods are only valid when certain assumptions are met. One such assumption is the probabilistic assumption, also called the positivity assumption.
 
-Before we get to the assumption, a little background is necessary. First, we need two groups: a person who is unexposed to the particular treatment is in the control group and has exposure assignment 0, and those who are in the exposed or treatment group have exposure assignment 1. Then, X denotes a vector of possible exposure assignments for every study participant. Each row is a different X. The assignment mechanism captures which group each study participant is assigned. Mathematically, the assignment mechanism is defined as P(X|Z, Y(0), Y(1)), where Y(0) and Y(1) are the potential outcomes under a particular exposure assignment. This is the probability of having a particular set of exposure assignments, and as a probability must be between 0 and 1. Finally, all of the possible exposure assignments must sum to 1. Not every exposure assignment needs to have a probability greater than 0, but the sum of all exposure assignments must sum to 1.
+### Causal World Building
 
-Now, we have established that the assignment mechanism, which looks at a particular set of exposure assignments for all individuals, can be 0, but what about individual assignments? This is where positivity comes into play. The positivity assumption states that each individual must have non-zero probabilities of being assigned to each exposure. 
+Before we get to the assumption, a little background is necessary. First, we need two groups: a person who is unexposed to the particular treatment is in the control group and has exposure assignment 0, and those who are in the exposed or treatment group have exposure assignment 1. Then, $X$ denotes a vector of possible exposure assignments for every study participant. Each row is a different $X$. The assignment mechanism captures which group each study participant is assigned. Mathematically, the assignment mechanism is defined as $P(X|Z, Y(0), Y(1))$, where $Y(0)$ and $Y(1)$ are the potential outcomes under a particular exposure assignment. This is the probability of having a particular set of exposure assignments, and as a probability must be between 0 and 1. Finally, all of the possible exposure assignments must sum to 1. Not every exposure assignment needs to have a probability greater than 0, but the sum of all exposure assignments must sum to 1.
 
-```{r, echo=FALSE}
+### Simulate
+
+Now, we have established that the assignment mechanism, which looks at a particular set of exposure assignments for all individuals, can be 0, but what about individual assignments? This is where positivity comes into play. The positivity assumption states that each individual must have non-zero probabilities of being assigned to each exposure. For example, women who suffer from migraines are not supposed to take certain oral contraceptives. These women would never be assigned to the treatment in a birth control study. So, what if some were included? We will run a simulation to explore this question.
+
+```{r, echo=FALSE, warning = FALSE, message = FALSE}
 printFlag = FALSE
-library(tidyverse)
+library(tidyverse, warn.conflicts = FALSE)
 ```
 
 ```{r}
@@ -25,8 +30,7 @@ library(tidyverse)
 populate = function(n){
   tibble(
     y0 = rnorm(n,1),
-    y1 = y0 + 1
-  )
+    y1 = y0 + 3)
 }
 
 set.seed(2)
@@ -35,7 +39,11 @@ dat = populate(50)
 dat %>%
   summarise(true_causal_effect = mean(y1) - mean(y0))
 ```
-We have generated a dataset with 50 people where the true causal effect is 1. Now let's say that there are only 5 exposure assignments with assignment mechanisms greater than 0 and that the assignment mechanisms have equal probability 0.2. Then, we can select one at random to be our exposure assignment vector.
+
+We have generated a dataset with 50 people where the true causal effect is 3. The causal effect of 3 is completely made up because appropriate scale is unknown for the birth control example. Next we will generate exposure assignment $X$.
+
+We randomly populate most of the matrix with 0's and 1's. Then, to be sure we there is at least one observation with a unit assignment probability of 0, a zero vector is added in. There are two individuals who had migraines and could never be assigned to the treatment. 
+
 
 ```{r}
 # generate possible exposure assignments X
@@ -46,28 +54,38 @@ exp_assmt = exp_assmt_func(5,49)
 
 # add one col of all 0's
 exp_assmt = cbind(integer(5), exp_assmt)
+exp_assmt
 
 # choose X at random
 row_num = sample(1:5,1)
 x = exp_assmt[row_num,]
 ```
 
-We will now say that our observed outcome (Y-obs) is the potential outcome based on exposure assignment. So, if a unit has been assigned to control, they have Y-obs = Y(0).
+Now let's say that there are only 5 exposure assignments with assignment mechanisms greater than 0 and that the assignment mechanisms have equal probability 0.2. Then, we can select one at random to be our exposure assignment vector.
+
+$$X = (0,1,1,1,1,1,1,1,0,1,1,1,0,0,1,1,0,0,1,0,0,1,1,0,1,1,1,0,1,1, $$
+$$1,0,1,0,1,1,1,1,1,0,0,0,0,1,1,1,0,1,0,1)$$
+
+We will now say that our observed outcome (y_obs) is the potential outcome based on exposure assignment. So, if a unit has been assigned to control, they have $Y^{obs} = Y(0)$.
 
 ```{r}
 # add exposure assignments to data
 dat = dat %>% add_column(x)
-```
 
-```{r}
 # obtain Y-obs
 dat = dat %>%
   mutate(y_obs = ifelse(x == 1, y1, y0))
+```
 
+Now, when we calculate the causal effect, we find it is different than the true 3.
+
+```{r}
 dat %>%
   summarise(observed_causal_effect = mean(y_obs[x == 1]) - 
               mean(y_obs[x == 0]))
 ```
+When an individual has a unit assignment probability of 0 or 1, that means he/she will either never or always be assigned to the treatment group. If someone can never be part of the other group, they are fundamentally different from the others in the trial. The reason that our causal analysis works is that we are comparing people who could theoretically be in either group and therefore are similar.
+
 
 
 
